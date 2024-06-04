@@ -98,14 +98,27 @@ async function run() {
 
     //Common API
     //save new user data in database
-    app.put("/staffs", async (req, res) => {
+    app.put("/staff", async (req, res) => {
       const staff = req.body;
       const query = { uid: staff?.uid };
 
       //isExist already exist
       const isExist = await staffsCollection.findOne(query);
       if (isExist) {
-        return res.send({ message: "user already exist" });
+        //if the user exist and want to update the existing user data
+        if (staff.update) {
+          const updateDoc = {
+            $set: {
+              ...staff,
+            },
+          };
+
+          const result = await staffsCollection.updateOne(query, updateDoc);
+
+          return res.send({ message: "update staff data", result });
+        } else {
+          return res.send({ message: "user already exist" });
+        }
       }
 
       //save new user
@@ -120,7 +133,16 @@ async function run() {
         updateDoc,
         options
       );
-      res.send({ message: "saved new user data" });
+      res.send({ message: "saved new user data", result });
+    });
+
+    //get single staff data
+    app.get("/staff", verifyToken, async (req, res) => {
+      const uid = req.query.uid;
+
+      const result = await staffsCollection.findOne({ uid: uid });
+
+      res.send(result);
     });
   } catch (err) {
     console.log("Error from database:", err);
