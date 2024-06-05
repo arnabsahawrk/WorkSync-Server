@@ -54,6 +54,7 @@ async function run() {
     //All Database Collection
     const DB = client.db("WorkSync");
     const staffsCollection = DB.collection("staffs");
+    const tasksCollection = DB.collection("tasks");
 
     //User Authentication Related API (JWT)
     //jwt token setup
@@ -96,7 +97,7 @@ async function run() {
       next();
     };
 
-    //Common API
+    //Employee Related API
     //save new user data in database
     app.put("/staff", async (req, res) => {
       const staff = req.body;
@@ -141,6 +142,26 @@ async function run() {
       const uid = req.query.uid;
 
       const result = await staffsCollection.findOne({ uid: uid });
+
+      res.send(result);
+    });
+
+    //post work task
+    app.post("/task", verifyToken, async (req, res) => {
+      const taskData = req.body;
+
+      const result = await tasksCollection.insertOne(taskData);
+
+      res.send(result);
+    });
+
+    //get tasks by uid
+    app.get("/tasks", verifyToken, async (req, res) => {
+      const uid = req.query.uid;
+
+      const result = (
+        await tasksCollection.find({ uid: uid }).toArray()
+      ).reverse();
 
       res.send(result);
     });
