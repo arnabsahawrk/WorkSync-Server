@@ -141,6 +141,12 @@ async function run() {
     app.get("/staff", verifyToken, async (req, res) => {
       const uid = req.query.uid;
 
+      if (req.decoded.uid !== uid) {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
+
       const result = await staffsCollection.findOne({ uid: uid });
 
       res.send(result);
@@ -150,6 +156,12 @@ async function run() {
     app.post("/task", verifyToken, async (req, res) => {
       const taskData = req.body;
 
+      if (req.decoded.uid !== taskData.uid) {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
+
       const result = await tasksCollection.insertOne(taskData);
 
       res.send(result);
@@ -158,6 +170,12 @@ async function run() {
     //get tasks by uid
     app.get("/tasks", verifyToken, async (req, res) => {
       const uid = req.query.uid;
+
+      if (req.decoded.uid !== uid) {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
 
       const result = (
         await tasksCollection.find({ uid: uid }).toArray()
