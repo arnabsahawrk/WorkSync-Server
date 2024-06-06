@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 
 //config
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 8080;
 const app = express();
 
@@ -55,6 +56,7 @@ async function run() {
     const DB = client.db("WorkSync");
     const staffsCollection = DB.collection("staffs");
     const tasksCollection = DB.collection("tasks");
+    const salariesCollection = DB.collection("salaries");
 
     //User Authentication Related API (JWT)
     //jwt token setup
@@ -117,6 +119,29 @@ async function run() {
         .toArray();
 
       res.send(result);
+    });
+
+    //post salaries data for HR only
+    app.post("/salaries", verifyToken, verifyHR, async (req, res) => {
+      const paymentInfo = req.body;
+
+      const countResult = await salariesCollection.countDocuments();
+      const result = await salariesCollection.insertOne({
+        ...paymentInfo,
+        id: countResult + 1,
+      });
+
+      res.send(result);
+    });
+
+    //get isPayment data for HR only
+    app.post("/salaries/isPayment", verifyToken, verifyHR, async (req, res) => {
+      const isPayment = req.body;
+
+      const result = await salariesCollection.findOne(isPayment);
+
+      if (result) res.send({ isPayment: true });
+      else res.send({ isPayment: false });
     });
 
     //Employee Related API
@@ -210,6 +235,31 @@ async function run() {
 
       res.send(result);
     });
+
+    //Payment Related Api
+    //create payment intent
+    app.post(
+      "/create-payment-intent",
+      verifyToken,
+      verifyHR,
+      async (req, res) => {
+        const salaryInCent = parseFloat(req.body.salary) * 100;
+
+        if (salaryInCent < 1) return;
+
+        //generate client secret
+        const { client_secret } = await stripe.paymentIntents.create({
+          amount: salaryInCent,
+          currency: "inr",
+
+          automatic_payment_methods: {
+            enabled: true,
+          },
+        });
+
+        res.send({ clientSecret: client_secret });
+      }
+    );
   } catch (err) {
     console.log("Error from database:", err);
   }
