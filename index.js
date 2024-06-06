@@ -204,7 +204,9 @@ async function run() {
           .send({ error: true, message: "forbidden access" });
       }
 
-      const result = await tasksCollection.find({ uid: uid }).toArray();
+      const result = (
+        await tasksCollection.find({ uid: uid }).toArray()
+      ).reverse();
 
       res.send(result);
     });
