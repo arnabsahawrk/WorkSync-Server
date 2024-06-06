@@ -97,6 +97,28 @@ async function run() {
       next();
     };
 
+    //get employees only for HR
+    app.get("/employees", verifyToken, verifyHR, async (req, res) => {
+      const result = await staffsCollection
+        .find(
+          { role: "Employee" },
+          {
+            projection: {
+              id: 1,
+              uid: 1,
+              name: 1,
+              email: 1,
+              isVerified: 1,
+              accountNumber: 1,
+              salary: 1,
+            },
+          }
+        )
+        .toArray();
+
+      res.send(result);
+    });
+
     //Employee Related API
     //save new user data in database
     app.put("/staff", async (req, res) => {
@@ -123,10 +145,12 @@ async function run() {
       }
 
       //save new user
+      const countResult = await staffsCollection.countDocuments();
       const options = { upsert: true };
       const updateDoc = {
         $set: {
           ...staff,
+          id: countResult + 1,
         },
       };
       const result = await staffsCollection.updateOne(
@@ -161,8 +185,11 @@ async function run() {
           .status(403)
           .send({ error: true, message: "forbidden access" });
       }
-
-      const result = await tasksCollection.insertOne(taskData);
+      const countResult = await tasksCollection.countDocuments();
+      const result = await tasksCollection.insertOne({
+        ...taskData,
+        id: countResult + 1,
+      });
 
       res.send(result);
     });
@@ -177,9 +204,7 @@ async function run() {
           .send({ error: true, message: "forbidden access" });
       }
 
-      const result = (
-        await tasksCollection.find({ uid: uid }).toArray()
-      ).reverse();
+      const result = await tasksCollection.find({ uid: uid }).toArray();
 
       res.send(result);
     });
