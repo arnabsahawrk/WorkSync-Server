@@ -258,6 +258,24 @@ async function run() {
       res.send(result);
     });
 
+    //get payment history by uid
+    app.get("/paymentHistory", verifyToken, async (req, res) => {
+      const uid = req.query.uid;
+
+      if (req.decoded.uid !== uid) {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
+
+      const result = await salariesCollection
+        .find({ uid: uid })
+        .sort({ inputDate: 1 })
+        .toArray();
+
+      res.send(result);
+    });
+
     //Payment Related Api
     //create payment intent
     app.post(
