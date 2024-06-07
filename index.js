@@ -166,6 +166,62 @@ async function run() {
       res.send({ totalTasks, totalHours, allTasks });
     });
 
+    //get employee details by uid
+    app.get("/employeeDetails", verifyToken, verifyHR, async (req, res) => {
+      const uid = req.query.uid;
+
+      //Tasks Statistics
+      const totalTasks = await tasksCollection.countDocuments({ uid: uid });
+
+      const tasksResult = await tasksCollection
+        .aggregate([
+          { $match: { uid: uid } },
+          {
+            $group: {
+              _id: `$uid`,
+              hours: { $sum: "$hours" },
+            },
+          },
+        ])
+        .toArray();
+      const totalHours = tasksResult.length > 0 ? tasksResult[0].hours : 0;
+
+      const tasks = await tasksCollection.find({ uid: uid }).toArray();
+
+      const task = {
+        totalTasks,
+        totalHours,
+        tasks,
+      };
+
+      //Salaries Statistics
+      const salariesResult = await salariesCollection
+        .aggregate([
+          { $match: { uid: uid } },
+          {
+            $group: {
+              _id: `$uid`,
+              payment: { $sum: "$salary" },
+            },
+          },
+        ])
+        .toArray();
+      const totalPayments =
+        salariesResult.length > 0 ? salariesResult[0].payment : 0;
+
+      const salaries = await salariesCollection.find({ uid: uid }).toArray();
+
+      const salary = {
+        totalPayments,
+        salaries,
+      };
+
+      //Employee info
+      const staff = await staffsCollection.findOne({ uid: uid });
+
+      res.send({ task, salary, staff });
+    });
+
     //Employee Related API
     //save new user data in database
     app.put("/staff", async (req, res) => {
