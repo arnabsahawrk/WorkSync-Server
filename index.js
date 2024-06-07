@@ -144,6 +144,28 @@ async function run() {
       else res.send({ isPayment: false });
     });
 
+    //get all the tasks submitted by employee
+    app.get("/allTasks", verifyToken, verifyHR, async (req, res) => {
+      const totalTasks = await tasksCollection.countDocuments();
+
+      const result = await tasksCollection
+        .aggregate([
+          {
+            $group: {
+              _id: null,
+              hours: { $sum: "$hours" },
+            },
+          },
+        ])
+        .toArray();
+
+      const totalHours = result.length > 0 ? result[0].hours : 0;
+
+      const allTasks = await tasksCollection.find({}).toArray();
+
+      res.send({ totalTasks, totalHours, allTasks });
+    });
+
     //Employee Related API
     //save new user data in database
     app.put("/staff", async (req, res) => {
