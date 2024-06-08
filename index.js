@@ -142,6 +142,7 @@ async function run() {
               isVerified: 1,
               accountNumber: 1,
               salary: 1,
+              isFired: 1,
             },
           }
         )
