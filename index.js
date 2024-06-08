@@ -97,6 +97,7 @@ async function run() {
               projection: {
                 id: 1,
                 uid: 1,
+                photoURL: 1,
                 name: 1,
                 email: 1,
                 designation: 1,
