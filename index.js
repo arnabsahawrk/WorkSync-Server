@@ -84,6 +84,34 @@ async function run() {
       next();
     };
 
+    //get verified employees only for Admin
+    app.get(
+      "/verifiedEmployees",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const result = await staffsCollection
+          .find(
+            { isVerified: true },
+            {
+              projection: {
+                id: 1,
+                uid: 1,
+                name: 1,
+                email: 1,
+                designation: 1,
+                salary: 1,
+                role: 1,
+                isFired: 1,
+              },
+            }
+          )
+          .toArray();
+
+        res.send(result);
+      }
+    );
+
     //HR Related API
     //hr token verifying middleware
     const verifyHR = async (req, res, next) => {
